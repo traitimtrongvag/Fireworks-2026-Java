@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.display.AnsiTerminal;
 import org.example.display.StartupBanner;
 import org.example.display.TerminalDisplay;
 import org.example.engine.FireworkEngine;
@@ -23,6 +24,12 @@ public class App {
             e.printStackTrace();
         } finally {
             display.shutdown();
+            try {
+                AnsiTerminal.disableRawMode();
+                AnsiTerminal.showCursor();
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
         }
     }
 }

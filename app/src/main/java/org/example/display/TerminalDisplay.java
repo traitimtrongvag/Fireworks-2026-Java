@@ -3,15 +3,11 @@ package org.example.display;
 import org.example.physics.Particle;
 import org.example.physics.Vector3D;
 import org.example.platform.PlatformDetector;
-import org.fusesource.jansi.AnsiConsole;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
 import java.util.List;
 
 public class TerminalDisplay {
-  private Terminal terminal;
   private int width;
   private int height;
   private char[][] buffer;
@@ -23,6 +19,8 @@ public class TerminalDisplay {
   private static final String HIDE_CURSOR = "\033[?25l";
   private static final String SHOW_CURSOR = "\033[?25h";
   private static final String HOME = "\033[H";
+  private static final String ALT_SCREEN = "\033[?1049h";
+  private static final String EXIT_ALT_SCREEN = "\033[?1049l";
 
   public TerminalDisplay() {
     this.platform = new PlatformDetector();
@@ -30,49 +28,43 @@ public class TerminalDisplay {
 
   public void initialize() {
     try {
-      if (platform.isWindows()) {
-        AnsiConsole.systemInstall();
-      }
-
-      terminal = TerminalBuilder.builder()
-          .system(true)
-          .jansi(true)
-          .jna(false)
-          .dumb(false)
-          .build();
-
-      if (!platform.isWindows()) {
-        terminal.enterRawMode();
-      }
-
-      width = Math.max(80, terminal.getWidth());
-      height = Math.max(24, terminal.getHeight());
+      PlatformDetector.TerminalSize size = platform.getTerminalSize();
+      width = size.width;
+      height = size.height;
 
       buffer = new char[height][width];
       colorBuffer = new String[height][width];
 
-      System.out.print(CLEAR + HIDE_CURSOR);
+      if (!platform.isWindows()) {
+        System.out.print(ALT_SCREEN);
+      }
+      System.out.print(CLEAR + HIDE_CURSOR + HOME);
       System.out.flush();
-    } catch (IOException e) {
+
+      if (platform.isWindows()) {
+        enableWindowsAnsi();
+      }
+    } catch (Exception e) {
       throw new RuntimeException("Failed to initialize terminal on " + platform.getPlatformName(), e);
     }
   }
 
+  private void enableWindowsAnsi() {
+    try {
+      ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "echo", "");
+      pb.inheritIO();
+      pb.start().waitFor();
+    } catch (Exception e) {
+      // Ignore, ANSI may not work on old Windows
+    }
+  }
+
   public void shutdown() {
+    if (!platform.isWindows()) {
+      System.out.print(EXIT_ALT_SCREEN);
+    }
     System.out.print(CLEAR + HOME + SHOW_CURSOR + RESET);
     System.out.flush();
-
-    try {
-      if (terminal != null) {
-        terminal.close();
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      if (platform.isWindows()) {
-        AnsiConsole.systemUninstall();
-      }
-    }
   }
 
   public void clear() {
