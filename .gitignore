@@ -1,23 +1,20 @@
+# Eclipse / IDE
+.project
+.classpath
+.settings/
+
 # Gradle
 .gradle/
 build/
+**/build/
 
-# IntelliJ IDEA
-.idea/
-*.iml
-*.ipr
-*.iws
-out/
+# Java
+*.class
 
-# VS Code
-.vscode/
+# Output
+bin/
+**/bin/
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-
-# Java
-hs_err_pid*
